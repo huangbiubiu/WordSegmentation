@@ -224,7 +224,12 @@ class PTBModel(object):
         return self._train_op
 
 
-class SmallConfig(object):
+class BaseConfig:
+    def __init__(self, vocab_size: int):
+        self.vocab_size = vocab_size
+
+
+class SmallConfig(BaseConfig):
     """Small config."""
     init_scale = 0.1
     learning_rate = 1.0
@@ -237,10 +242,9 @@ class SmallConfig(object):
     keep_prob = 1.0
     lr_decay = 0.5
     batch_size = 20
-    vocab_size = 10000
 
 
-class MediumConfig(object):
+class MediumConfig(BaseConfig):
     """Medium config."""
     init_scale = 0.05
     learning_rate = 1.0
@@ -253,10 +257,9 @@ class MediumConfig(object):
     keep_prob = 0.5
     lr_decay = 0.8
     batch_size = 20
-    vocab_size = 10000
 
 
-class LargeConfig(object):
+class LargeConfig(BaseConfig):
     """Large config."""
     init_scale = 0.04
     learning_rate = 1.0
@@ -269,10 +272,9 @@ class LargeConfig(object):
     keep_prob = 0.35
     lr_decay = 1 / 1.15
     batch_size = 20
-    vocab_size = 10000
 
 
-class TestConfig(object):
+class TestConfig(BaseConfig):
     """Tiny config, for testing."""
     init_scale = 0.1
     learning_rate = 1.0
@@ -285,7 +287,6 @@ class TestConfig(object):
     keep_prob = 1.0
     lr_decay = 0.5
     batch_size = 20
-    vocab_size = 10000
 
 
 def run_epoch(session, model, eval_op=None, verbose=False):
@@ -323,15 +324,15 @@ def run_epoch(session, model, eval_op=None, verbose=False):
     return np.exp(costs / iters)
 
 
-def get_config():
+def get_config(vocab_size):
     if FLAGS.model == "small":
-        return SmallConfig()
+        return SmallConfig(vocab_size)
     elif FLAGS.model == "medium":
-        return MediumConfig()
+        return MediumConfig(vocab_size)
     elif FLAGS.model == "large":
-        return LargeConfig()
+        return LargeConfig(vocab_size)
     elif FLAGS.model == "test":
-        return TestConfig()
+        return TestConfig(vocab_size)
     else:
         raise ValueError("Invalid model: %s", FLAGS.model)
 
@@ -341,10 +342,10 @@ def main(_):
         raise ValueError("Must set --data_path to PTB data directory")
 
     raw_data = reader.ptb_raw_data(FLAGS.data_path)
-    train_data, valid_data, test_data, _ = raw_data # TODO set vocab_size manually
+    train_data, valid_data, test_data, vocab_size = raw_data
 
-    config = get_config()
-    eval_config = get_config()
+    config = get_config(vocab_size)
+    eval_config = get_config(vocab_size)
     eval_config.batch_size = 1
     eval_config.num_steps = 1
 
