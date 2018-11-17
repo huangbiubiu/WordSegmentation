@@ -21,27 +21,56 @@ def main(fpath_list: str, result_path: str, min_len=7, limit_line_cnt=None) -> N
     process the whole dataset.
     """
     training_files = get_data_list(os.path.join(fpath_list, 'training'))
-    process_training_files(training_files, result_path)
+    _, word_dict = process_training_files(training_files, result_path)
+
+    testing_files = get_data_list(os.path.join(fpath_list, 'testing'))
+    process_testing_files(testing_files, result_path, word_dict=word_dict)
 
 
-def process_training_files(file_paths: list, data_dir: str):
-    # corpus: str = " ".join(list(map(lambda path: read_file_lines(path), file_paths)))
-    file_paths = file_paths[:1]
-    corpus: str = " ".join(list(map(lambda path: read_file_lines(path), file_paths)))  # TODO for debug
+def process_data(file_paths: list, word_dict=None) -> list:
+    # file_paths = file_paths[:1]# TODO for debug
+    corpus: str = " ".join(list(map(lambda path: read_file_lines(path), file_paths)))
     corpus: str = process_corpus(corpus)
     corpus: list = corpus.splitlines(keepends=False)
-    corpus = map(process_line, corpus)
+    corpus = map(lambda s: process_line(s, word_dict=word_dict), corpus)
     corpus: list = list(filter(lambda s: len(s) > 1, corpus))  # remove single character or empty entries
     shuffle(corpus)
 
-    build_dict(corpus, data_dir)
+    return corpus
 
 
-def build_dict(corpus: list, save_dir: str):
+def process_testing_files(file_paths: list, data_dir: str, word_dict=None):
+    lines = process_data(file_paths, word_dict=word_dict)
+
+    split = split_dataset(lines, [1, 1])
+
+    save_data(split[0], data_dir, 'test')
+    save_data(split[1], data_dir, 'val')
+
+
+def process_training_files(file_paths: list, data_dir: str):
+    lines = process_data(file_paths)
+
+    word_dict = build_and_save_dict(lines, data_dir)
+
+    save_data(lines, data_dir, 'train')
+
+    return lines, word_dict
+
+
+def save_data(corpus: list, data_dir: str, file_type: str) -> None:
+    with open(os.path.join(data_dir, file_type), 'a', encoding='utf8') as file:
+        for line in corpus:
+            file.write(f'{line}\n')
+
+
+def build_and_save_dict(corpus: list, save_dir: str):
     word_set: list = list(set(" ".join(corpus).split()))
     word_set_file: str = " ".join(word_set)
     with open(os.path.join(save_dir, 'train.dict'), 'a', encoding='utf8') as file:
         file.write(word_set_file)
+
+    return word_set
 
 
 def get_data_list(data_dir: str):
@@ -69,18 +98,20 @@ def read_file_lines(file_path: str, limit=None) -> str:
         return lines
 
 
-def split_dataset(corpus: list, ratio=None) -> (str, str, str):
-    if ratio is None:
-        ratio = [0.85, 0.075]
-    total_len = len(corpus)
-    training_size = int(total_len * ratio[0])
-    testing_size = int(total_len * ratio[1])
+def split_dataset(corpus: list, ratio: list) -> list:
+    """split a corpus to multiple parts"""
+    idx = [int(float(i) / sum(ratio) * len(corpus)) for i in ratio]  # normalization
 
-    return corpus[: training_size], corpus[training_size: training_size + testing_size], corpus[
-                                                                                         training_size + testing_size:]
+    split = []
+    accumulation = 0
+    for count in idx:
+        split.append(corpus[accumulation:accumulation + count])
+        accumulation += count
+
+    return split
 
 
-def reduce_continuous(s: str, reduce_num=False, reduce_letter=False) -> str:
+def reduce_continuous(s: str, reduce_num=False, reduce_letter=False, word_dict=None) -> str:
     """
     remove continuous symbols such as whitespaces, identities or digits
 
@@ -89,6 +120,11 @@ def reduce_continuous(s: str, reduce_num=False, reduce_letter=False) -> str:
         s = re.sub(r'(<num>)+', '<num>', s)  # remove continuous num
     if reduce_letter:
         s = re.sub(r'(<letters>)+', '<letters>', s)  # remove continuous num
+
+    if word_dict is not None:
+        replacement = {k: "<unk>" for k in word_dict}
+        re.sub('({})'.format('|'.join(map(re.escape, replacement.keys()))), lambda m: replacement[m.group()], s)
+
     s = ' '.join(s.split())  # remove continuous whitespaces
     return s
 
@@ -109,9 +145,9 @@ def split_words(s: str) -> str:
     return s
 
 
-def process_line(line: str) -> str:
+def process_line(line: str, word_dict=None) -> str:
     # replace continuous whitespaces to single one
-    line = reduce_continuous(line, reduce_letter=False, reduce_num=False)
+    line = reduce_continuous(line, reduce_letter=False, reduce_num=False, word_dict=word_dict)
 
     return line.strip()
     pass
