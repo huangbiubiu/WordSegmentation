@@ -122,7 +122,7 @@ def reduce_continuous(s: str, reduce_num=False, reduce_letter=False, word_dict=N
         s = re.sub(r'(<letters>)+', '<letters>', s)  # remove continuous num
 
     if word_dict is not None:
-        replacement = {k: "<unk>" for k in word_dict}
+        replacement = {k: "<unk>" for k in word_dict}  # TODO use regex is extremely slow
         re.sub('({})'.format('|'.join(map(re.escape, replacement.keys()))), lambda m: replacement[m.group()], s)
 
     s = ' '.join(s.split())  # remove continuous whitespaces
