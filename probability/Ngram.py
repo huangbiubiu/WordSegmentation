@@ -1,4 +1,5 @@
 import sklearn.feature_extraction
+from scipy.sparse import csr_matrix
 import numpy as np
 
 
@@ -7,19 +8,23 @@ class Ngram:
         self.ngram_size: int = ngram_size
         self.vectorizer: sklearn.feature_extraction.text.CountVectorizer = sklearn.feature_extraction.text.CountVectorizer(
             ngram_range=(self.ngram_size, self.ngram_size))
-        self.matrix = None
+        self.matrix: csr_matrix = None
 
     def train(self, corpus: list) -> None:
-        # corpus = corpus.replace("\n", " E ")
-        self.matrix = self.vectorizer.fit_transform(corpus)
-        np.sum(self.matrix, axis=0)
+        self.matrix: csr_matrix = self.vectorizer.fit_transform(corpus)
+        self.matrix = self.matrix.sum(axis=0).astype(np.float32)
 
-    def prob(self, sentence: str):
-        return self.vectorizer.fit([sentence])
+        self.matrix = self.matrix / self.matrix.sum()  # normalize the probability
+        # TODO smoothing the prob
 
-        pass
-
-    pass
+    def probability(self, word: str):
+        if len(word.split()) != self.ngram_size:
+            raise ValueError(f"Sentence length should be {self.ngram_size}")
+        if word in self.vectorizer.vocabulary_:
+            index = self.vectorizer.vocabulary_[word]
+            return self.matrix[index]
+        else:
+            return 0
 
 
 def main():
@@ -30,7 +35,8 @@ def main():
     model = Ngram(3)
     model.train(lines)
 
-    prob = model.prob("从 根本上 解决 问题")
+    print(list(model.vectorizer.vocabulary_.keys())[:100])  # todo for debug
+
     pass
 
 
