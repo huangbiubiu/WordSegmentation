@@ -2,6 +2,7 @@ import numpy as np
 from scipy.sparse import csc_matrix
 
 from probability.Ngram import Ngram
+import util
 
 
 class Graph:
@@ -12,7 +13,7 @@ class Graph:
         self.ngram = Ngram(ngram_size, corpus_path)
 
         print("building word dict")
-        self.word_dict = self.__construct_dict(dict_path)
+        self.word_dict = util.construct_dict(dict_path)
 
         print("initialization completed.")
 
@@ -27,29 +28,23 @@ class Graph:
                     graph[i, j] = True
         return graph
 
-    @staticmethod
-    def __construct_dict(path: str) -> set:
-        with open(path, encoding='utf8') as f:
-            word_dict = set(f.readline().split())
-            word_dict.add('S')
-            word_dict.add('E')
-            return word_dict
+
 
     @staticmethod
-    def get_previous_index(index: int, graph) -> list:
+    def in_nodes(index: int, graph) -> list:
         return graph[:, index]
 
     @staticmethod
-    def get_next_index(index: int, graph) -> list:
+    def out_node(index: int, graph) -> list:
         return graph[index, :]
 
     @staticmethod
     def get_previous_n(current_index: int, n: int, graph) -> list:
-        previous = [[i] for i in list(Graph.get_previous_index(current_index, graph))]
+        previous = [[i] for i in list(Graph.in_nodes(current_index, graph))]
         for _ in range(n - 1):
             new_previous = []
             for path in previous:
-                for p in Graph.get_previous_index(path[-1], graph):
+                for p in Graph.in_nodes(path[-1], graph):
                     new_previous.append(path.append(p))
 
         return previous
@@ -61,6 +56,7 @@ class Graph:
         n = len(sentence)
 
         for n in range(1, n):
+
             pass
 
         return route
