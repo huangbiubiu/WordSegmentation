@@ -1,13 +1,17 @@
 import sklearn.feature_extraction
 from scipy.sparse import csr_matrix
 import numpy as np
+from sklearn.feature_extraction.text import CountVectorizer
+
+from util import Constant
 
 
 class Ngram:
     def __init__(self, ngram_size, train_path: str):
         self.ngram_size: int = ngram_size
-        self.vectorizer: sklearn.feature_extraction.text.CountVectorizer = sklearn.feature_extraction.text.CountVectorizer(
-            ngram_range=(self.ngram_size, self.ngram_size))
+        self.vectorizer: CountVectorizer = CountVectorizer(
+            ngram_range=(self.ngram_size, self.ngram_size),
+            token_pattern='\\b\\w+\\b')
 
         corpus: list = self.__load_corpus(train_path)
         self.matrix: csr_matrix = self.__train(corpus)
@@ -23,7 +27,8 @@ class Ngram:
 
     @staticmethod
     def process_line(line: str) -> str:
-        line = f"S {line} E"
+        line = line.replace('\n', '')  # remove new line symbol
+        line = f"{Constant.START_SYMBOL} {line} {Constant.END_SYMBOL}"
         return line
 
     def __train(self, corpus: list) -> csr_matrix:
@@ -40,7 +45,7 @@ class Ngram:
         #     raise ValueError(f"Sentence length should be {self.ngram_size}")
         if word in self.vectorizer.vocabulary_:
             index = self.vectorizer.vocabulary_[word]
-            return self.matrix[index]
+            return self.matrix.A1[index]
         else:
             return 0
 
@@ -50,6 +55,7 @@ def main():
 
     model = Ngram(3, path)
 
+    print(list(filter(lambda s: 'S' in s, model.vectorizer.vocabulary_.keys())))
     print(list(model.vectorizer.vocabulary_.keys())[:100])  # todo for debug
 
     pass

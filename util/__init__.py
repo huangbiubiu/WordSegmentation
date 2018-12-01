@@ -1,6 +1,6 @@
 class Constant:
-    START_SYMBOL = 'S'
-    END_SYMBOL = 'E'
+    START_SYMBOL = 's'
+    END_SYMBOL = 'e'
 
 
 def construct_dict(path: str) -> set:

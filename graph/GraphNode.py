@@ -1,9 +1,14 @@
 class GraphNode:
+    next: list
+    previous: list
+    prior_prob: float
+    union_prob: float
+    value: str
+
     def __init__(self, word: str):
         self.value: str = word
 
-        self.upstream_prob: float
-        self.self_prob: float
+        self.accumulative_prob: dict = {}
 
         self.previous: list = []
         self.next: list = []
