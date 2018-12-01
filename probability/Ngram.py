@@ -1,6 +1,5 @@
-import sklearn.feature_extraction
-from scipy.sparse import csr_matrix
 import numpy as np
+from scipy.sparse import csr_matrix
 from sklearn.feature_extraction.text import CountVectorizer
 
 from util import Constant

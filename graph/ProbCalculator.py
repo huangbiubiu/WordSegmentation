@@ -12,6 +12,7 @@ class ProbCalculator:
 
     def __init__(self, dict_path: str, corpus_path: str, ngram_size: int):
         self.ngram_size = ngram_size
+        # TODO downgrade to lower size if all path is zero
 
         self.ngram = {}
         if os.path.exists(self.__NGRAM_PATH):
@@ -19,7 +20,7 @@ class ProbCalculator:
             with open(self.__NGRAM_PATH, 'rb') as file:
                 self.ngram = pickle.load(file)
         else:
-            for n in range(1, ngram_size):
+            for n in range(1, ngram_size + 1):
                 print(f"building {n}-gram language model")
                 self.ngram[n] = Ngram(n, corpus_path)
 
@@ -54,8 +55,8 @@ class ProbCalculator:
 def main():
     dict_path: str = "/home/hyh/projects/CLProject/WordSegmentation/data/train.dict"
     corpus_path: str = "/home/hyh/projects/CLProject/WordSegmentation/data/train"
-    graph = ProbCalculator(dict_path, corpus_path, 3)
-    g = graph.calc("去北京大学玩")
+    graph = ProbCalculator(dict_path, corpus_path, ngram_size=2)
+    g = graph.calc("那么多人饿死了")
 
     print(g)
 
