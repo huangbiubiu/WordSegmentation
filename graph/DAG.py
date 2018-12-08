@@ -2,6 +2,7 @@ from collections import deque
 
 import util
 from graph.GraphNode import GraphNode
+from probability.Ngram import Ngram
 from util import Constant
 
 
@@ -28,23 +29,22 @@ class DAG:
                 self.__add_nodes(new_node, sub_sentence[i:], word_dict)
         pass
 
-    def forward(self, probs: dict):
+    def forward(self, probs: Ngram):
         self.__update_prob_recursive(self.start, probs, deque([self.start.value]))
 
-    def __update_prob_recursive(self, start: GraphNode, probs: dict, previous_words: deque):
-
+    def __update_prob_recursive(self, start: GraphNode, probs: Ngram, previous_words: deque):
 
         for next_node in start.next:
             next_node: GraphNode = next_node  # just for type declaration
             pre_len = len(previous_words)
 
             # prior probability
-            prior_prob = probs[pre_len].probability(" ".join(previous_words))
+            prior_prob = probs.probability(" ".join(previous_words))
 
             # union probability
             words = list(previous_words.copy())
             words.append(next_node.value)
-            union_prob = probs[pre_len + 1].probability(" ".join(words))
+            union_prob = probs.probability(" ".join(words))
 
             # update accumulative probability
             if prior_prob == 0:

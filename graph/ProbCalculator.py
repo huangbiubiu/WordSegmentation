@@ -14,15 +14,13 @@ class ProbCalculator:
         self.ngram_size = ngram_size
         # TODO downgrade to lower size if all path is zero
 
-        self.ngram = {}
         if os.path.exists(self.__NGRAM_PATH):
             print(f'load saved ngram')
             with open(self.__NGRAM_PATH, 'rb') as file:
                 self.ngram = pickle.load(file)
         else:
-            for n in range(1, ngram_size + 1):
-                print(f"building {n}-gram language model")
-                self.ngram[n] = Ngram(n, corpus_path)
+            print(f"building {ngram_size}-gram language model")
+            self.ngram = Ngram(ngram_size, corpus_path)
 
             if not os.path.exists('cache/'):
                 os.mkdir('cache/')

@@ -9,7 +9,7 @@ class Ngram:
     def __init__(self, ngram_size, train_path: str):
         self.ngram_size: int = ngram_size
         self.vectorizer: CountVectorizer = CountVectorizer(
-            ngram_range=(self.ngram_size, self.ngram_size),
+            ngram_range=(1, self.ngram_size + 1),
             token_pattern='\\b\\w+\\b')
 
         corpus: list = self.__load_corpus(train_path)
