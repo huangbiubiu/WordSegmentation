@@ -2,6 +2,10 @@ class Constant:
     START_SYMBOL = 's'
     END_SYMBOL = 'e'
 
+    UNKNOWN_SYMBOL = 'u'
+    LETTER_SYMBOL = 'l'
+    DIGIT_SYMBOL = 'd'
+
 
 def construct_dict(path: str) -> set:
     with open(path, encoding='utf8') as f:

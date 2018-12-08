@@ -40,8 +40,6 @@ class Ngram:
         return matrix
 
     def probability(self, word: str):
-        # if len(word.split()) != self.ngram_size:
-        #     raise ValueError(f"Sentence length should be {self.ngram_size}")
         if word in self.vectorizer.vocabulary_:
             index = self.vectorizer.vocabulary_[word]
             return self.matrix.A1[index]

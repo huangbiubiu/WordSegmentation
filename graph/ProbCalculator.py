@@ -43,19 +43,25 @@ class ProbCalculator:
         print("initialization completed.")
 
     def calc(self, sentence):
-        g = DAG.build_graph(sentence, self.word_dict, ngram_size=self.ngram_size)
+        # TODO error when sentence contains ENGLISH WORDS and DIGITS
+        if isinstance(sentence, str):
+            g = DAG.build_graph(sentence, self.word_dict, ngram_size=self.ngram_size)
 
-        g.forward(self.ngram)
-        segment, _ = g.backward()
+            g.forward(self.ngram)
+            segment, _ = g.backward()
 
-        return " ".join(segment)
+            return " ".join(segment)
+        elif isinstance(sentence, list):
+            return list(map(self.calc, sentence))
+        else:
+            raise TypeError(f"Type {type(sentence)} is not supported.")
 
 
 def main():
     dict_path: str = "/home/hyh/projects/CLProject/WordSegmentation/data/train.dict"
     corpus_path: str = "/home/hyh/projects/CLProject/WordSegmentation/data/train"
     graph = ProbCalculator(dict_path, corpus_path, ngram_size=2)
-    g = graph.calc("那么多人饿死了")
+    g = graph.calc("1973年9月5日")
 
     print(g)
 

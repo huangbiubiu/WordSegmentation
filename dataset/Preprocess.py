@@ -1,16 +1,21 @@
 import os
 import re
+import shutil
+import string
+import sys
+import unicodedata
 from random import shuffle
 
-import zhon.hanzi
 import nltk
+import zhon.hanzi
 from nltk import FreqDist
-import sys
-import string
+from typing.re import Pattern
 
-import unicodedata
+from util import Constant
 
-from sklearn.feature_extraction.text import CountVectorizer
+# pre-compile regular expression for speed
+digit_reducer: Pattern = re.compile(rf'({Constant.DIGIT_SYMBOL})+')
+letter_reducer: Pattern = re.compile(rf'({Constant.LETTER_SYMBOL})+')
 
 
 def main(fpath_list: str, result_path: str, min_len=7, limit_line_cnt=None) -> None:
@@ -24,6 +29,11 @@ def main(fpath_list: str, result_path: str, min_len=7, limit_line_cnt=None) -> N
     for processing all data. Make sure set limit_line_cnt when testing, and the memory is enough when
     process the whole dataset.
     """
+
+    # clear output path
+    if os.path.exists(result_path):
+        shutil.rmtree(result_path)
+
     training_files = get_data_list(os.path.join(fpath_list, 'training'))
     _, word_dict = process_training_files(training_files, result_path)
 
@@ -32,7 +42,6 @@ def main(fpath_list: str, result_path: str, min_len=7, limit_line_cnt=None) -> N
 
 
 def process_data(file_paths: list, word_dict=None) -> list:
-    # file_paths = file_paths[:1]# TODO for debug
     corpus: str = " ".join(list(map(lambda path: read_file_lines(path), file_paths)))
     corpus: str = process_corpus(corpus)
     corpus: list = corpus.splitlines(keepends=False)
@@ -55,7 +64,7 @@ def process_testing_files(file_paths: list, data_dir: str, word_dict=None):
 def process_training_files(file_paths: list, data_dir: str):
     lines = process_data(file_paths)
 
-    word_dict = build_and_save_dict(lines, data_dir)
+    word_dict = build_and_save_dict(lines, data_dir, min_freq=0)
 
     save_data(lines, data_dir, 'train')
 
@@ -69,12 +78,19 @@ def save_data(corpus: list, data_dir: str, file_type: str) -> None:
 
 
 def build_and_save_dict(corpus: list, save_dir: str, min_freq=5):
-    tokens = nltk.word_tokenize(" ".join(corpus))
-    fdist = FreqDist(tokens)
+    if min_freq is not None and min_freq > 0:
+        tokens = nltk.word_tokenize(" ".join(corpus))
+        fdist = FreqDist(tokens)
 
-    word_set = set(map(lambda x: x[0], filter(lambda x: x[1] >= min_freq, fdist.items())))
+        word_set = set(map(lambda x: x[0], filter(lambda x: x[1] >= min_freq, fdist.items())))
+    else:
+        word_set = set(" ".join(corpus).split())
 
     word_set_file: str = " ".join(word_set)
+
+    # save dict to disk
+    if not os.path.exists(save_dir):
+        os.mkdir(save_dir)
     with open(os.path.join(save_dir, 'train.dict'), 'a', encoding='utf8') as file:
         file.write(word_set_file)
 
@@ -125,36 +141,20 @@ def reduce_continuous(s: str, reduce_num=False, reduce_letter=False, word_dict=N
 
     """
     if reduce_num:
-        s = re.sub(r'(<num>)+', '<num>', s)  # remove continuous num
+        s = digit_reducer.sub(Constant.DIGIT_SYMBOL, s)  # remove continuous num
     if reduce_letter:
-        s = re.sub(r'(<letters>)+', '<letters>', s)  # remove continuous num
+        s = letter_reducer.sub(Constant.LETTER_SYMBOL, s)  # remove continuous num
 
     if word_dict is not None:
-        s = ' '.join(list(map(lambda word: '<unk>' if word not in word_dict else word, s.split())))
+        s = ' '.join(list(map(lambda word: Constant.UNKNOWN_SYMBOL if word not in word_dict else word, s.split())))
 
     s = ' '.join(s.split())  # remove continuous whitespaces
     return s
 
 
-def str_len(s: str) -> int:
-    return len(re.sub(r'(<.+>)', 'I', s))
-
-
-def split_words(s: str) -> str:
-    """
-    Add whitespace after each characters and identities.
-
-    Only use when train a character-based LM. Not use when the corpus is already split.
-    :param s: corpus
-    :return: processed corpus
-    """
-    s = re.sub(r'([\u4e00-\u9fa5])|(<.+>)', r'\1 ', s)
-    return s
-
-
 def process_line(line: str, word_dict=None) -> str:
     # replace continuous whitespaces to single one
-    line = reduce_continuous(line, reduce_letter=False, reduce_num=False, word_dict=word_dict)
+    line = reduce_continuous(line, reduce_letter=True, reduce_num=True, word_dict=word_dict)
 
     return line.strip()
     pass
@@ -173,8 +173,8 @@ def process_corpus(corpus: str) -> str:
     # remove special chars
     table = str.maketrans({**{k: "\n" for k in zhon.hanzi.stops},
                            **{k: " " for k in zhon.hanzi.non_stops + string.punctuation},
-                           **{str(k): "N" for k in range(10)},
-                           **{k: "N" for k in string.ascii_lowercase}})
+                           **{str(k): Constant.DIGIT_SYMBOL for k in range(10)},
+                           **{k: Constant.LETTER_SYMBOL for k in string.ascii_lowercase}})
     corpus = corpus.translate(table)
 
     return corpus
@@ -184,5 +184,5 @@ def process_corpus(corpus: str) -> str:
 
 if __name__ == '__main__':
     input_path = sys.argv[1]
-    # output_path = sys.argv[2]
-    main(input_path, '../../data', limit_line_cnt=None)
+    output_path = sys.argv[2]
+    main(input_path, output_path, limit_line_cnt=None)
