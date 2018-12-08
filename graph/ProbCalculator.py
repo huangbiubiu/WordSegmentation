@@ -46,8 +46,9 @@ class ProbCalculator:
         g = DAG.build_graph(sentence, self.word_dict, ngram_size=self.ngram_size)
 
         g.forward(self.ngram)
+        segment, _ = g.backward()
 
-        return g
+        return " ".join(segment)
 
 
 def main():

@@ -4,6 +4,8 @@ import util
 from graph.GraphNode import GraphNode
 from probability.Ngram import Ngram
 from util import Constant
+import operator
+from collections import deque
 
 
 class DAG:
@@ -32,11 +34,29 @@ class DAG:
     def forward(self, probs: Ngram):
         self.__update_prob_recursive(self.start, probs, deque([self.start.value]))
 
-    def __update_prob_recursive(self, start: GraphNode, probs: Ngram, previous_words: deque):
+    def backward(self) -> (list, float):
+        """
+        do backward on the DAG
+        :return: maximum probability segmentation and its probability
+        """
+        result = deque()
+        node: GraphNode = self.end
+        accumulative_prob = 1
+        while node != self.start:
+            previous_node = max(node.accumulative_prob.items(), key=operator.itemgetter(1))[0]
+            accumulative_prob *= node.accumulative_prob[previous_node]
 
+            node = previous_node
+            result.appendleft(previous_node.value)
+
+        return list(result), accumulative_prob
+
+    def __update_prob_recursive(self, start: GraphNode, probs: Ngram, previous_words: deque):
+        fixed_previous_words = previous_words
         for next_node in start.next:
+            previous_words = fixed_previous_words.copy()
+
             next_node: GraphNode = next_node  # just for type declaration
-            pre_len = len(previous_words)
 
             # prior probability
             prior_prob = probs.probability(" ".join(previous_words))
