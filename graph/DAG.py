@@ -1,34 +1,48 @@
+import operator
 from collections import deque
 
 import util
 from graph.GraphNode import GraphNode
 from probability.Ngram import Ngram
 from util import Constant
-import operator
-from collections import deque
 
 
 class DAG:
     ngram_size: int
 
-    def __init__(self, ngram_size: int):
-        self.start: GraphNode = GraphNode(Constant.START_SYMBOL)
-        self.end: GraphNode = GraphNode(Constant.END_SYMBOL)
+    def __init__(self, ngram_size: int, sentence_len: int):
+        self.start: GraphNode = GraphNode(Constant.START_SYMBOL, start=0, end=0)
+        self.end: GraphNode = GraphNode(Constant.END_SYMBOL, start=sentence_len, end=sentence_len)
 
         self.ngram_size = ngram_size
 
-    def __add_nodes(self, node, sub_sentence: str, word_dict: set):
+        self.index_node = {0: {self.start.value: self.start},
+                           sentence_len: {self.end.value: self.end}}
+
+        pass
+
+    def __add_nodes(self, node, sentence: str, start: int, end: int, word_dict: set):
+        sub_sentence = sentence[start: end]
         if sub_sentence == Constant.END_SYMBOL:
             node.next.append(self.end)
             self.end.previous.append(node)
             return
 
+        if start in self.index_node:
+            next_dict: dict = self.index_node[start]
+        else:
+            next_dict: dict = {}
+            self.index_node[start] = next_dict
+
         for i in range(1, len(sub_sentence)):
             word: str = sub_sentence[:i]
-            if word in word_dict:
-                new_node = GraphNode(word)
+            if word in next_dict:
+                node.add_next(next_dict[word])
+            elif word in word_dict:
+                new_node = GraphNode(word, start=start, end=start + i)
+                next_dict[word] = new_node
                 node.add_next(new_node)
-                self.__add_nodes(new_node, sub_sentence[i:], word_dict)
+                self.__add_nodes(new_node, sentence, start=start + i, end=end, word_dict=word_dict)
         pass
 
     def forward(self, probs: Ngram):
@@ -86,10 +100,10 @@ class DAG:
 
     @staticmethod
     def build_graph(sentence: str, word_dict: set, ngram_size: int):
-        sentence = f"{sentence}{Constant.END_SYMBOL}"
+        sentence = f"{Constant.START_SYMBOL}{sentence}{Constant.END_SYMBOL}"
 
-        g = DAG(ngram_size)
-        g.__add_nodes(g.start, sentence, word_dict)
+        g = DAG(ngram_size, len(sentence))
+        g.__add_nodes(g.start, sentence, start=1, end=len(sentence), word_dict=word_dict)
 
         return g
 
