@@ -3,10 +3,14 @@ import re
 from random import shuffle
 
 import zhon.hanzi
+import nltk
+from nltk import FreqDist
 import sys
 import string
 
 import unicodedata
+
+from sklearn.feature_extraction.text import CountVectorizer
 
 
 def main(fpath_list: str, result_path: str, min_len=7, limit_line_cnt=None) -> None:
@@ -64,8 +68,12 @@ def save_data(corpus: list, data_dir: str, file_type: str) -> None:
             file.write(f'{line}\n')
 
 
-def build_and_save_dict(corpus: list, save_dir: str):
-    word_set: list = list(set(" ".join(corpus).split()))
+def build_and_save_dict(corpus: list, save_dir: str, min_freq=5):
+    tokens = nltk.word_tokenize(" ".join(corpus))
+    fdist = FreqDist(tokens)
+
+    word_set = set(map(lambda x: x[0], filter(lambda x: x[1] >= min_freq, fdist.items())))
+
     word_set_file: str = " ".join(word_set)
     with open(os.path.join(save_dir, 'train.dict'), 'a', encoding='utf8') as file:
         file.write(word_set_file)
@@ -122,8 +130,7 @@ def reduce_continuous(s: str, reduce_num=False, reduce_letter=False, word_dict=N
         s = re.sub(r'(<letters>)+', '<letters>', s)  # remove continuous num
 
     if word_dict is not None:
-        replacement = {k: "<unk>" for k in word_dict}  # TODO use regex is extremely slow
-        re.sub('({})'.format('|'.join(map(re.escape, replacement.keys()))), lambda m: replacement[m.group()], s)
+        s = ' '.join(list(map(lambda word: '<unk>' if word not in word_dict else word, s.split())))
 
     s = ' '.join(s.split())  # remove continuous whitespaces
     return s
