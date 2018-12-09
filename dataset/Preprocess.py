@@ -31,8 +31,8 @@ def main(fpath_list: str, result_path: str, min_len=7, limit_line_cnt=None) -> N
     """
 
     # clear output path
-    if os.path.exists(result_path):
-        shutil.rmtree(result_path)
+    # if os.path.exists(result_path):
+    #     shutil.rmtree(result_path)
 
     training_files = get_data_list(os.path.join(fpath_list, 'training'))
     _, word_dict = process_training_files(training_files, result_path)
@@ -41,7 +41,12 @@ def main(fpath_list: str, result_path: str, min_len=7, limit_line_cnt=None) -> N
     process_testing_files(testing_files, result_path, word_dict=word_dict)
 
 
-def process_files(file_paths: list, word_dict=None) -> list:
+
+
+
+
+
+def __process_files(file_paths: list, word_dict=None) -> list:
     corpus: str = " ".join(list(map(lambda path: read_file_lines(path), file_paths)))
     return process_data(corpus, word_dict)
 
@@ -57,7 +62,7 @@ def process_data(corpus: str, word_dict: set) -> list:
 
 
 def process_testing_files(file_paths: list, data_dir: str, word_dict=None):
-    lines = process_files(file_paths, word_dict=word_dict)
+    lines = __process_files(file_paths, word_dict=word_dict)
 
     split = split_dataset(lines, [1, 1])
 
@@ -66,7 +71,7 @@ def process_testing_files(file_paths: list, data_dir: str, word_dict=None):
 
 
 def process_training_files(file_paths: list, data_dir: str):
-    lines = process_files(file_paths)
+    lines = __process_files(file_paths)
 
     word_dict = build_and_save_dict(lines, data_dir, min_freq=0)
 

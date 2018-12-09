@@ -6,14 +6,18 @@ from util import Constant
 
 
 class Ngram:
+    matrix: csr_matrix
+    total: int
+
     def __init__(self, ngram_size, train_path: str):
         self.ngram_size: int = ngram_size
+
         self.vectorizer: CountVectorizer = CountVectorizer(
-            ngram_range=(1, self.ngram_size + 1),
+            ngram_range=(self.ngram_size, self.ngram_size),
             token_pattern='\\b\\w+\\b')
 
         corpus: list = self.__load_corpus(train_path)
-        self.matrix: csr_matrix = self.__train(corpus)
+        self.matrix, self.total = self.__train(corpus)
 
     @staticmethod
     def __load_corpus(path: str) -> list:
@@ -25,19 +29,25 @@ class Ngram:
         return lines
 
     @staticmethod
+    def __read_vocabulary(path="../data/dict.txt.small"):
+        with open(path, encoding='utf8') as file:
+            vocab = file.readlines()
+        vocab = list(map(lambda s: s.split()[0], vocab))
+
+        return vocab
+
+    @staticmethod
     def process_line(line: str) -> str:
         line = line.replace('\n', '')  # remove new line symbol
         line = f"{Constant.START_SYMBOL} {line} {Constant.END_SYMBOL}"
         return line
 
-    def __train(self, corpus: list) -> csr_matrix:
+    def __train(self, corpus: list) -> (csr_matrix, int):
         matrix: csr_matrix = self.vectorizer.fit_transform(corpus)
         matrix = matrix.sum(axis=0).astype(np.float32)
+        matrix = matrix / matrix.sum()
 
-        matrix = matrix / matrix.sum()  # normalize the probability
-        # TODO smoothing the prob
-
-        return matrix
+        return matrix, matrix.sum()
 
     def probability(self, word: str):
         if word in self.vectorizer.vocabulary_:

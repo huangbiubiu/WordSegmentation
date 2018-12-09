@@ -7,10 +7,14 @@ class GraphNode:
     union_prob: float
     value: str
 
+    accumulative_prob: float
+
+
     def __init__(self, word: str, start: int, end: int):
         self.value: str = word
 
-        self.accumulative_prob: dict = {}
+        self.accumulative_prob = 0
+        self.best_previous = None
 
         self.previous: list = []
         self.next: list = []

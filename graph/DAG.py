@@ -14,6 +14,8 @@ class DAG:
         self.start: GraphNode = GraphNode(Constant.START_SYMBOL, start=0, end=0)
         self.end: GraphNode = GraphNode(Constant.END_SYMBOL, start=sentence_len, end=sentence_len)
 
+        self.start.accumulative_prob = 1
+
         self.ngram_size = ngram_size
 
         self.index_node = {0: {self.start.value: self.start},
@@ -52,7 +54,7 @@ class DAG:
             add_next(1, sub_sentence[:1])
         pass
 
-    def forward(self, probs: Ngram):
+    def forward(self, probs: dict):
         self.__update_prob_recursive(self.start, probs, deque([self.start.value]))
 
     def backward(self) -> (list, float):
@@ -64,35 +66,36 @@ class DAG:
         node: GraphNode = self.end
         accumulative_prob = 1
         while node != self.start:
-            previous_node = max(node.accumulative_prob.items(), key=operator.itemgetter(1))[0]
-            accumulative_prob *= node.accumulative_prob[previous_node]
+            previous_node = node.best_previous
+            accumulative_prob *= node.accumulative_prob
 
             node = previous_node
             result.appendleft(previous_node.value)
 
         return list(result), accumulative_prob
 
-    def __update_prob_recursive(self, start: GraphNode, probs: Ngram, previous_words: deque):
+    def __update_prob_recursive(self, start: GraphNode, probs: dict, previous_words: deque):
         fixed_previous_words = previous_words
         for next_node in start.next:
             previous_words = fixed_previous_words.copy()
+            pre_len = len(previous_words)
 
             next_node: GraphNode = next_node  # just for type declaration
 
             # prior probability
-            prior_prob = probs.probability(" ".join(previous_words))
+            prior_prob = probs[pre_len].probability(" ".join(previous_words))
 
             # union probability
             words = list(previous_words.copy())
             words.append(next_node.value)
-            union_prob = probs.probability(" ".join(words))
+            union_prob = probs[pre_len + 1].probability(" ".join(words))
 
-            # update accumulative probability
-            if prior_prob == 0:
-                accumulative_prob = 0
-            else:
-                accumulative_prob = union_prob / prior_prob
-            next_node.accumulative_prob[start] = accumulative_prob
+            local_prob = union_prob / prior_prob
+            accumulative_prob = local_prob * start.accumulative_prob
+
+            if next_node.best_previous is None or accumulative_prob > next_node.accumulative_prob:
+                next_node.accumulative_prob = accumulative_prob
+                next_node.best_previous = start
 
             if start == self.end:
                 start.next.append(self.end)

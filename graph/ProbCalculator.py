@@ -1,10 +1,9 @@
 import os.path
+import pickle
 
 import util
-from dataset.Preprocess import process_data
 from graph.DAG import DAG
 from probability.Ngram import Ngram
-import pickle
 
 
 class ProbCalculator:
@@ -19,8 +18,10 @@ class ProbCalculator:
             with open(self.__NGRAM_PATH, 'rb') as file:
                 self.ngram = pickle.load(file)
         else:
-            print(f"building {ngram_size}-gram language model")
-            self.ngram = Ngram(ngram_size, corpus_path)
+            self.ngram = {}
+            for n in range(1, ngram_size + 1):
+                print(f"building {n}-gram language model")
+                self.ngram[n] = Ngram(n, corpus_path)
 
             if not os.path.exists('cache/'):
                 os.mkdir('cache/')
@@ -64,7 +65,7 @@ def main():
     dict_path: str = "/home/hyh/projects/CLProject/WordSegmentation/data/train.dict"
     corpus_path: str = "/home/hyh/projects/CLProject/WordSegmentation/data/train"
     graph = ProbCalculator(dict_path, corpus_path, ngram_size=2)
-    g = graph.calc("去北京大学玩")
+    g = graph.calc("中国今天成立啦")
 
     print(g)
 
