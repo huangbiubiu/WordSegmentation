@@ -1,6 +1,7 @@
 import os.path
 
 import util
+from dataset.Preprocess import process_data
 from graph.DAG import DAG
 from probability.Ngram import Ngram
 import pickle
@@ -45,6 +46,9 @@ class ProbCalculator:
     def calc(self, sentence):
         # TODO error when sentence contains ENGLISH WORDS and DIGITS
         if isinstance(sentence, str):
+            original_sentence = sentence
+            sentence = process_data(sentence, self.word_dict)
+
             g = DAG.build_graph(sentence, self.word_dict, ngram_size=self.ngram_size)
 
             g.forward(self.ngram)
@@ -61,7 +65,7 @@ def main():
     dict_path: str = "/home/hyh/projects/CLProject/WordSegmentation/data/train.dict"
     corpus_path: str = "/home/hyh/projects/CLProject/WordSegmentation/data/train"
     graph = ProbCalculator(dict_path, corpus_path, ngram_size=2)
-    g = graph.calc("1973年9月5日")
+    g = graph.calc("我们可以双击下面的install-tl-advanced.bat，然后会出现上一节的GUI，然后就可以配置安装了。")
 
     print(g)
 

@@ -41,8 +41,12 @@ def main(fpath_list: str, result_path: str, min_len=7, limit_line_cnt=None) -> N
     process_testing_files(testing_files, result_path, word_dict=word_dict)
 
 
-def process_data(file_paths: list, word_dict=None) -> list:
+def process_files(file_paths: list, word_dict=None) -> list:
     corpus: str = " ".join(list(map(lambda path: read_file_lines(path), file_paths)))
+    return process_data(corpus, word_dict)
+
+
+def process_data(corpus: str, word_dict: set) -> list:
     corpus: str = process_corpus(corpus)
     corpus: list = corpus.splitlines(keepends=False)
     corpus = map(lambda s: process_line(s, word_dict=word_dict), corpus)
@@ -53,7 +57,7 @@ def process_data(file_paths: list, word_dict=None) -> list:
 
 
 def process_testing_files(file_paths: list, data_dir: str, word_dict=None):
-    lines = process_data(file_paths, word_dict=word_dict)
+    lines = process_files(file_paths, word_dict=word_dict)
 
     split = split_dataset(lines, [1, 1])
 
@@ -62,7 +66,7 @@ def process_testing_files(file_paths: list, data_dir: str, word_dict=None):
 
 
 def process_training_files(file_paths: list, data_dir: str):
-    lines = process_data(file_paths)
+    lines = process_files(file_paths)
 
     word_dict = build_and_save_dict(lines, data_dir, min_freq=0)
 
