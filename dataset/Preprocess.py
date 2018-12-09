@@ -149,8 +149,9 @@ def reduce_continuous(s: str, reduce_num=False, reduce_letter=False, word_dict=N
     if reduce_letter:
         s = letter_reducer.sub(Constant.LETTER_SYMBOL, s)  # remove continuous num
 
-    if word_dict is not None:
-        s = ' '.join(list(map(lambda word: Constant.UNKNOWN_SYMBOL if word not in word_dict else word, s.split())))
+    # replace words not in dictionary to unk
+    # if word_dict is not None:
+    #     s = ' '.join(list(map(lambda word: Constant.UNKNOWN_SYMBOL if word not in word_dict else word, s.split())))
 
     s = ' '.join(s.split())  # remove continuous whitespaces
     return s

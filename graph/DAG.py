@@ -34,15 +34,22 @@ class DAG:
             next_dict: dict = {}
             self.index_node[start] = next_dict
 
+        def add_next(index: int, word_: str):
+            new_node = GraphNode(word_, start=start, end=start + index)
+            next_dict[word_] = new_node
+            node.add_next(new_node)
+            self.__add_nodes(new_node, sentence, start=start + index, end=end, word_dict=word_dict)
+
         for i in range(1, len(sub_sentence)):
             word: str = sub_sentence[:i]
             if word in next_dict:
                 node.add_next(next_dict[word])
             elif word in word_dict:
-                new_node = GraphNode(word, start=start, end=start + i)
-                next_dict[word] = new_node
-                node.add_next(new_node)
-                self.__add_nodes(new_node, sentence, start=start + i, end=end, word_dict=word_dict)
+                add_next(i, word)
+
+        # force to add next char as next word
+        if node != self.end and len(node.next) == 0:
+            add_next(1, sub_sentence[:1])
         pass
 
     def forward(self, probs: Ngram):

@@ -13,7 +13,6 @@ class ProbCalculator:
 
     def __init__(self, dict_path: str, corpus_path: str, ngram_size: int):
         self.ngram_size = ngram_size
-        # TODO downgrade to lower size if all path is zero
 
         if os.path.exists(self.__NGRAM_PATH):
             print(f'load saved ngram')
@@ -47,14 +46,14 @@ class ProbCalculator:
         # TODO error when sentence contains ENGLISH WORDS and DIGITS
         if isinstance(sentence, str):
             original_sentence = sentence
-            sentence = process_data(sentence, self.word_dict)
+            # sentence = process_data(sentence, self.word_dict)
 
             g = DAG.build_graph(sentence, self.word_dict, ngram_size=self.ngram_size)
 
             g.forward(self.ngram)
             segment, _ = g.backward()
 
-            return " ".join(segment)
+            return " ".join(segment)[2:]  # remove start symbol
         elif isinstance(sentence, list):
             return list(map(self.calc, sentence))
         else:
@@ -65,7 +64,7 @@ def main():
     dict_path: str = "/home/hyh/projects/CLProject/WordSegmentation/data/train.dict"
     corpus_path: str = "/home/hyh/projects/CLProject/WordSegmentation/data/train"
     graph = ProbCalculator(dict_path, corpus_path, ngram_size=2)
-    g = graph.calc("我们可以双击下面的install-tl-advanced.bat，然后会出现上一节的GUI，然后就可以配置安装了。")
+    g = graph.calc("去北京大学玩")
 
     print(g)
 
