@@ -45,16 +45,15 @@ class Ngram:
     def __train(self, corpus: list) -> (csr_matrix, int):
         matrix: csr_matrix = self.vectorizer.fit_transform(corpus)
         matrix = matrix.sum(axis=0).astype(np.float32)
-        matrix = matrix / matrix.sum()
 
         return matrix, matrix.sum()
 
     def probability(self, word: str):
         if word in self.vectorizer.vocabulary_:
             index = self.vectorizer.vocabulary_[word]
-            return self.matrix.A1[index]
+            return self.matrix.A1[index] / self.total
         else:
-            return 0
+            return 1 / self.total  # laplace smoothing, not good enough
 
 
 def main():

@@ -49,6 +49,7 @@
 使用[`opencc`](https://github.com/BYVoid/OpenCC)将繁体数据集转化为简体数据集。
 命令示例:
 ```bash
+mv cityu_training.utf8 cityu_training.utf8.zh-hk
 opencc -i cityu_training.utf8.zh-hk -o cityu_training.utf8 -c t2s.json
 ```
 
@@ -66,7 +67,7 @@ python dataset/Preprocess.py <dataset_source> <output_path>
 > 在测试环境上，预处理用时 < 30s
 
 ### 分词
-请参见`graph/ProbCalculator.py`中`main`函数示例. 首次运行时，程序会计算训练数据中ngram概率并将其以pickle文件缓存至`graph/cache`文件夹下. 之后每次运行程序会在初始化阶段加载pickle文件.
+首次运行时，程序会计算训练数据中ngram概率并将其以pickle文件缓存至`graph/cache`文件夹下. 之后每次运行程序会在初始化阶段加载pickle文件.
 
 分词示例:
 ```python3
@@ -90,9 +91,17 @@ initialization completed.
 ## Ablation Study
 
 ### n-gram中n的选择
+在词典较大时，n=2时数据稀疏已经比较明显。对几个错误分词结果进行分析表明，许多错误分词是由于此表里根本没有此搭配。例如`中华人民共和国 今天 成立 啦 !`中，训练语料中并没有`中华人民共和国 今天`的组合。在n>2时，数据稀疏的后果更为严重，导致整个句子中出现大量概率为0的成分。
 
 ### 预处理的作用
+数据预处理是一种缓解数据稀疏的方法。例如语句`1977年9月`被处理为`d年d月`，可以匹配任意年月的语句。
+
+
+## Error Study
+数据稀疏是分词错误的重要原因。在不采用平滑时，测试语料中有30%的概率出现了概率为0的现象。
 
 ## Future Work
-1. 可以使用神经语言模型计算概率.
+1. 可以使用神经语言模型计算概率(可能会导致速度急剧下降)
 2. 进一步提高预处理效率. 数据预处理中sklearn.feature_extraction.text.CountVectorizer计算ngram和re.sub替换特殊词语部分占用总预处理时间的60%。可以采用更高效的实现从而提升预处理速度。
+3. 采取更加合适的smoothing策略，如Katz Smoothing等
+4. 优化代码，采取更高效的数据结构。例如采取Native的数据结构而不是class来提高效率.

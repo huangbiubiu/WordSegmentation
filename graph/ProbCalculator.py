@@ -2,6 +2,7 @@ import os.path
 import pickle
 
 import util
+from dataset.Preprocess import process_data
 from graph.DAG import DAG
 from probability.Ngram import Ngram
 
@@ -44,17 +45,22 @@ class ProbCalculator:
         print("initialization completed.")
 
     def calc(self, sentence):
-        # TODO error when sentence contains ENGLISH WORDS and DIGITS
         if isinstance(sentence, str):
             original_sentence = sentence
-            # sentence = process_data(sentence, self.word_dict)
+            sentence: str = process_data(sentence, self.word_dict)[0]
 
-            g = DAG.build_graph(sentence, self.word_dict, ngram_size=self.ngram_size)
+            segments = []
+            for s in sentence.split():
+                g = DAG.build_graph(s, self.word_dict, ngram_size=self.ngram_size)
 
-            g.forward(self.ngram)
-            segment, _ = g.backward()
+                g.forward(self.ngram)
+                segment, _ = g.backward()
 
-            return " ".join(segment)[2:]  # remove start symbol
+                split_result = " ".join(segment)[2:]
+
+                segments.append(split_result)
+
+            return " ".join(segments)  # remove start symbol
         elif isinstance(sentence, list):
             return list(map(self.calc, sentence))
         else:
@@ -65,7 +71,7 @@ def main():
     dict_path: str = "/home/hyh/projects/CLProject/WordSegmentation/data/train.dict"
     corpus_path: str = "/home/hyh/projects/CLProject/WordSegmentation/data/train"
     graph = ProbCalculator(dict_path, corpus_path, ngram_size=2)
-    g = graph.calc("中国今天成立啦")
+    g = graph.calc("中华人民共和国今天成立啦")
 
     print(g)
 
