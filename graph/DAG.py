@@ -1,6 +1,7 @@
 import operator
 from collections import deque
 
+import queue
 import util
 from graph.GraphNode import GraphNode
 from probability.Ngram import Ngram
@@ -14,12 +15,12 @@ class DAG:
         self.start: GraphNode = GraphNode(Constant.START_SYMBOL, start=0, end=0)
         self.end: GraphNode = GraphNode(Constant.END_SYMBOL, start=sentence_len, end=sentence_len)
 
-        self.start.accumulative_prob = 1
-
         self.ngram_size = ngram_size
 
         self.index_node = {0: {self.start.value: self.start},
                            sentence_len: {self.end.value: self.end}}
+
+        self.start.accumulative_prob[self] = 1
 
         pass
 
@@ -55,7 +56,9 @@ class DAG:
         pass
 
     def forward(self, probs: dict):
-        self.__update_prob_recursive(self.start, probs, deque([self.start.value]))
+        next_nodes = queue.Queue()
+        next_nodes.put({"next_queue": self.start, "previous_words": deque([self.start.value])})
+        self.__update_prob_recursive(probs=probs, next_queue=next_nodes)
 
     def backward(self) -> (list, float):
         """
@@ -66,16 +69,22 @@ class DAG:
         node: GraphNode = self.end
         accumulative_prob = 1
         while node != self.start:
-            previous_node = node.best_previous
-            accumulative_prob *= node.accumulative_prob
+            previous_node = max(node.accumulative_prob.items(), key=operator.itemgetter(1))[0]
+            accumulative_prob *= node.accumulative_prob[previous_node]
 
             node = previous_node
             result.appendleft(previous_node.value)
 
         return list(result), accumulative_prob
 
-    def __update_prob_recursive(self, start: GraphNode, probs: dict, previous_words: deque):
-        fixed_previous_words = previous_words
+    def __update_prob_recursive(self, next_queue: queue.Queue, probs: dict):
+        if next_queue.empty():
+            return
+
+        this_node = next_queue.get()
+        fixed_previous_words = this_node["previous_words"]
+        start = this_node["next_queue"]
+
         for next_node in start.next:
             previous_words = fixed_previous_words.copy()
             pre_len = len(previous_words)
@@ -91,11 +100,9 @@ class DAG:
             union_prob = probs[pre_len + 1].probability(" ".join(words))
 
             local_prob = union_prob / prior_prob
-            accumulative_prob = local_prob * start.accumulative_prob
+            accumulative_prob = local_prob * max(start.accumulative_prob.values())
 
-            if next_node.best_previous is None or accumulative_prob > next_node.accumulative_prob:
-                next_node.accumulative_prob = accumulative_prob
-                next_node.best_previous = start
+            next_node.accumulative_prob[start] = accumulative_prob
 
             if start == self.end:
                 start.next.append(self.end)
@@ -106,7 +113,10 @@ class DAG:
             previous_words.append(next_node.value)
             if len(previous_words) >= self.ngram_size:
                 previous_words.popleft()
-            self.__update_prob_recursive(next_node, probs, previous_words)
+            next_queue.put({"next_queue": next_node, "previous_words": previous_words})
+
+        # bfs
+        self.__update_prob_recursive(probs=probs, next_queue=next_queue)
 
     @staticmethod
     def build_graph(sentence: str, word_dict: set, ngram_size: int):

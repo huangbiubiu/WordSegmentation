@@ -174,18 +174,18 @@ def process_corpus(corpus: str) -> str:
     """
     replace special characters
     """
-    # replace full-width characters with half-width characters
-    corpus = unicodedata.normalize('NFKC', corpus)
-
-    # change to lower letter
-    corpus = corpus.lower()
-
-    # remove special chars
-    table = str.maketrans({**{k: "\n" for k in zhon.hanzi.stops},
-                           **{k: " " for k in zhon.hanzi.non_stops + string.punctuation},
-                           **{str(k): Constant.DIGIT_SYMBOL for k in range(10)},
-                           **{k: Constant.LETTER_SYMBOL for k in string.ascii_lowercase}})
-    corpus = corpus.translate(table)
+    # # replace full-width characters with half-width characters
+    # corpus = unicodedata.normalize('NFKC', corpus)
+    #
+    # # change to lower letter
+    # corpus = corpus.lower()
+    #
+    # # remove special chars
+    # table = str.maketrans({**{k: "\n" for k in zhon.hanzi.stops},
+    #                        **{k: " " for k in zhon.hanzi.non_stops + string.punctuation},
+    #                        **{str(k): Constant.DIGIT_SYMBOL for k in range(10)},
+    #                        **{k: Constant.LETTER_SYMBOL for k in string.ascii_lowercase}})
+    # corpus = corpus.translate(table)
 
     return corpus
 
