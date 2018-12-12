@@ -40,16 +40,18 @@ def __cut(sentence: str, graph: ProbCalculator) -> str:
     return " ".join(segments)
 
 
-def main(data_path: str):
+def main(data_path: str, out_path: str) -> None:
     graph = ProbCalculator(dict_path=DICT_PATH,
                            corpus_path=CORPUS_PATH,
                            ngram_size=2)
     with open(data_path, encoding='utf8') as file:
         lines = file.readlines()
     for line in lines:
-        print(__cut(line, graph))
+        with open(out_path, 'a', encoding='utf8') as file:
+            file.write(__cut(line, graph))
+            file.write("\n")
     pass
 
 
 if __name__ == '__main__':
-    main(data_path="./data/test.txt")
+    main(data_path="./data/test.txt", out_path="./data/test_out.txt")
