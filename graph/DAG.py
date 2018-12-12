@@ -1,3 +1,4 @@
+import math
 import operator
 from collections import deque
 
@@ -71,7 +72,8 @@ class DAG:
         accumulative_prob = 1
         while node != self.start:
             previous_node = max(node.accumulative_prob.items(), key=operator.itemgetter(1))[0]
-            accumulative_prob *= node.accumulative_prob[previous_node]
+            # accumulative_prob *= node.accumulative_prob[previous_node]
+            accumulative_prob += node.accumulative_prob[previous_node]
 
             node = previous_node
             result.appendleft(previous_node.value)
@@ -95,14 +97,17 @@ class DAG:
 
             # prior probability
             prior_prob = probs[pre_len].probability(" ".join(previous_words))
+            assert prior_prob != 0
 
             # union probability
             words = list(previous_words.copy())
             words.append(next_node.value)
             union_prob = probs[pre_len + 1].probability(" ".join(words))
+            assert union_prob != 0
 
             local_prob = union_prob / prior_prob
             accumulative_prob = local_prob * max(start.accumulative_prob.values())
+            assert accumulative_prob != 0
 
             next_node.accumulative_prob[start] = accumulative_prob
 

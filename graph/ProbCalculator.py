@@ -2,7 +2,6 @@ import os.path
 import pickle
 
 import util
-from dataset.Preprocess import process_data
 from graph.DAG import DAG
 from probability.Ngram import Ngram
 
@@ -46,21 +45,14 @@ class ProbCalculator:
 
     def calc(self, sentence):
         if isinstance(sentence, str):
-            original_sentence = sentence
-            sentence: str = process_data(sentence, self.word_dict)[0]
+            g = DAG.build_graph(sentence, self.word_dict, ngram_size=self.ngram_size)
 
-            segments = []
-            for s in sentence.split():
-                g = DAG.build_graph(s, self.word_dict, ngram_size=self.ngram_size)
+            g.forward(self.ngram)
+            segment, _ = g.backward()
 
-                g.forward(self.ngram)
-                segment, _ = g.backward()
+            return " ".join(segment)[2:]
 
-                split_result = " ".join(segment)[2:]
 
-                segments.append(split_result)
-
-            return " ".join(segments)  # remove start symbol
         elif isinstance(sentence, list):
             return list(map(self.calc, sentence))
         else:
@@ -71,7 +63,9 @@ def main():
     dict_path: str = "/home/hyh/projects/CLProject/WordSegmentation/data/train.dict"
     corpus_path: str = "/home/hyh/projects/CLProject/WordSegmentation/data/train"
     graph = ProbCalculator(dict_path, corpus_path, ngram_size=2)
-    g = graph.calc("国务院副总理李岚清１月１５日在由国务院办公厅")
+    g = graph.calc("全国各地积极开展走访慰问困难企业和特困职工的送温暖活动")
+    print(g)
+    g = graph.calc("全国各地积极开展走访慰问困难企业和特困职工的送温暖活动")
     # g = graph.calc("去北京大学玩")
 
     print(g)
