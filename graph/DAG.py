@@ -58,7 +58,8 @@ class DAG:
     def forward(self, probs: dict):
         next_nodes = queue.Queue()
         next_nodes.put({"next_queue": self.start, "previous_words": deque([self.start.value])})
-        self.__update_prob_recursive(probs=probs, next_queue=next_nodes)
+        visited_set = {self.start}
+        self.__update_prob_recursive(probs=probs, next_queue=next_nodes, visited=visited_set)
 
     def backward(self) -> (list, float):
         """
@@ -77,13 +78,14 @@ class DAG:
 
         return list(result), accumulative_prob
 
-    def __update_prob_recursive(self, next_queue: queue.Queue, probs: dict):
+    def __update_prob_recursive(self, next_queue: queue.Queue, probs: dict, visited: set):
         if next_queue.empty():
             return
 
         this_node = next_queue.get()
         fixed_previous_words = this_node["previous_words"]
         start = this_node["next_queue"]
+        visited.add(start)
 
         for next_node in start.next:
             previous_words = fixed_previous_words.copy()
@@ -113,10 +115,14 @@ class DAG:
             previous_words.append(next_node.value)
             if len(previous_words) >= self.ngram_size:
                 previous_words.popleft()
-            next_queue.put({"next_queue": next_node, "previous_words": previous_words})
+
+            # do not add the visited node
+            if next_node not in visited:
+                next_queue.put({"next_queue": next_node, "previous_words": previous_words})
 
         # bfs
-        self.__update_prob_recursive(probs=probs, next_queue=next_queue)
+        # TODO may raise too much recursive exception
+        self.__update_prob_recursive(probs=probs, next_queue=next_queue, visited=visited)
 
     @staticmethod
     def build_graph(sentence: str, word_dict: set, ngram_size: int):

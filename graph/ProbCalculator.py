@@ -71,7 +71,7 @@ def main():
     dict_path: str = "/home/hyh/projects/CLProject/WordSegmentation/data/train.dict"
     corpus_path: str = "/home/hyh/projects/CLProject/WordSegmentation/data/train"
     graph = ProbCalculator(dict_path, corpus_path, ngram_size=2)
-    g = graph.calc("中华人民共和国今天成立啦")
+    g = graph.calc("国务院副总理李岚清１月１５日在由国务院办公厅")
     # g = graph.calc("去北京大学玩")
 
     print(g)
